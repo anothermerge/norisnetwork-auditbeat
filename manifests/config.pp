@@ -31,7 +31,7 @@ class auditbeat::config {
     fail('Setting both xpack and monitoring is not supported!')
   }
 
-  if ($facts['auditbeat::major_version'] != undef) {
+  if ($facts['auditbeat_version'] != undef) {
     if Integer($auditbeat::major_version) < 8 {
       # Add the 'xpack' section if supported (version >= 6.2.0)
       if (versioncmp($facts['auditbeat_version'], '7.2.0') >= 0) and ($auditbeat::monitoring) {

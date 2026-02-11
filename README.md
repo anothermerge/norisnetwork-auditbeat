@@ -209,7 +209,7 @@ Installation and configuration.
 * `queue`: [Hash] auditbeat's internal queue, before the events publication (default is *4096* events in *memory* with immediate flush).
 * `logging`: [Hash] the auditbeat's logfile configuration (default: writes to `/var/log/auditbeat/auditbeat`, maximum 7 files, rotated when bigger than 10 MB).
 * `outputs`: [Hash] the options of the mandatory [outputs](https://www.elastic.co/guide/en/beats/auditbeat/current/configuring-output.html) section of the configuration file (default: undef).
-* `major_version`: [Enum] the major version of the package to install (default: '6', the only accepted value. Implemented for future reference).
+* `major_version`: [Enum] the major version of the package to install (default: '9', the only accepted value. Implemented for future reference).
 * `ensure`: [Enum 'present', 'absent']: whether Puppet should manage `auditbeat` or not (default: 'present').
 * `service_provider`: [Enum 'systemd', 'init', 'debian', 'redhat', 'upstart', undef] which boot framework to use to install and manage the service (default: undef).
 * `service_ensure`: [Enum 'enabled', 'running', 'disabled', 'unmanaged'] the status of the audit service (default 'enabled'). In more details:

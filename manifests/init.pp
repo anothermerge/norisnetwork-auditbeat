@@ -76,7 +76,7 @@ class auditbeat (
     },
   },
   Hash $outputs                                                                       = {},
-  Enum['5', '6', '7', '8'] $major_version                                             = '8',
+  Enum['5', '6', '7', '8', '9'] $major_version                                        = '9',
   Enum['present', 'absent'] $ensure                                                   = 'present',
   Optional[Enum['systemd', 'init', 'debian', 'redhat', 'upstart']] $service_provider  = undef,
   Boolean $manage_repo                                                                = true,

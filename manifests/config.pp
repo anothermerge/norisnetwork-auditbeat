@@ -46,6 +46,12 @@ class auditbeat::config {
     } else {
         $merged_config = $auditbeat_config_temp
     }
+  } else {
+    # No auditbeat_version fact yet, e.g. on the first run of a node where the
+    # package is not installed. Render the config without the version gated
+    # sections instead of leaving $merged_config unset, which writes an empty
+    # auditbeat.yml.
+    $merged_config = $auditbeat_config_temp
   }
 
   file { '/etc/auditbeat/auditbeat.yml':

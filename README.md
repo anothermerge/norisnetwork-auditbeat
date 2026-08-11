@@ -219,6 +219,8 @@ Installation and configuration.
   * *unamanged*: Puppet does not manage the service.
 * `package_ensure`: [String] the package version to install. It could be 'latest' (for the newest release) or a specific version number, in the format *x.y.z*, i.e., *6.2.0* (default: latest).
 * `manage_repo`: [Boolean] whether to add the elastic upstream repo to the package manager (default: true).
+* `apt_use_keyring`: [Boolean] on Debian based systems, whether to install the repository key as a keyring in `/etc/apt/keyrings` referenced by `signed-by` instead of using the removed `apt-key` command. Defaults to *true* on Ubuntu 22.04 and Debian 12 and newer (apt 2.4 and newer, the first version that reads armoured keyrings) and to *false* below that (default: undef, i.e. autodetect).
+* `apt_keyring_filename`: [String] the name of the keyring file created in `/etc/apt/keyrings`. Keep the *.asc* extension, as elastic publishes the key in armoured form (default: 'elastic.asc').
 * `config_file_mode`: [String] the octal file mode of the configuration file `/etc/auditbeat/auditbeat.yml` (default: 0644).
 * `disable_configtest`: [Boolean] whether to check if the configuration file is valid before attempting to run the service (default: true).
 * `tags`: [Array[Strings]]: the tags to add to each document (default: undef).

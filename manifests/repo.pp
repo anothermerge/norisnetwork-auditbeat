@@ -21,19 +21,41 @@ class auditbeat::repo inherits auditbeat {
   }
 
   if ($auditbeat::manage_repo == true) and ($auditbeat::ensure == 'present') {
-    case $facts['osfamily'] {
+    case $facts['os']['family'] {
       'Debian': {
         include ::apt
+        # apt-key is gone from apt 3.x (Ubuntu 25.10 and newer, Debian 13 and
+        # newer), which leaves Apt_key without a usable provider. Those releases
+        # get the key as a keyring referenced by signed-by instead. apt only
+        # reads armoured keyrings from 2.4 onwards, so older releases keep the
+        # apt-key based behaviour.
+        $keyring_capable = case $facts['os']['name'] {
+          'Ubuntu': { versioncmp($facts['os']['release']['full'], '22.04') >= 0 }
+          'Debian': { versioncmp($facts['os']['release']['major'], '12') >= 0 }
+          default:  { true }
+        }
+        $use_keyring = $auditbeat::apt_use_keyring ? {
+          undef   => $keyring_capable,
+          default => $auditbeat::apt_use_keyring,
+        }
+        $key_config = $use_keyring ? {
+          true    => {
+            name   => $auditbeat::apt_keyring_filename,
+            source => $gpg_key_url,
+          },
+          default => {
+            id     => $gpg_key_id,
+            source => $gpg_key_url,
+          },
+        }
+
         if !defined(Apt::Source['beats']) {
           apt::source{'beats':
             ensure   => $auditbeat::ensure,
             location => $apt_repo_url,
             release  => 'stable',
             repos    => 'main',
-            key      => {
-              id     => $gpg_key_id,
-              source => $gpg_key_url,
-            },
+            key      => $key_config,
           }
           Class['apt::update'] -> Package['auditbeat']
         }

@@ -33,6 +33,11 @@
 # @param ensure whether Puppet should manage auditbeat or not.
 # @param service_provider which boot framework to use to install and manage the service.
 # @param manage_repo whether to add the elastic upstream repo to the package manager.
+# @param apt_use_keyring whether to install the repo key as a keyring referenced by signed-by instead of
+#   with the removed apt-key command. Defaults to true on Ubuntu 22.04 and Debian 12 and newer, since apt
+#   only reads armoured keyrings from 2.4 onwards.
+# @param apt_keyring_filename the name of the keyring file created under /etc/apt/keyrings. Keep the .asc
+#   extension so that apt reads the armoured key elastic publishes.
 # @param service_ensure the status of the auditbeat service.
 # @param package_ensure the package version to install.
 # @param config_file_mode the permissions of the main configuration file.
@@ -84,6 +89,8 @@ class auditbeat (
   Optional[Variant[Stdlib::HTTPUrl, Stdlib::HTTPSUrl]] $yum_repo_url                  = undef,
   Optional[Variant[Stdlib::HTTPUrl, Stdlib::HTTPSUrl]] $gpg_key_url                   = undef,
   String $gpg_key_id                                                                  = '',
+  Optional[Boolean] $apt_use_keyring                                                  = undef,
+  String[1] $apt_keyring_filename                                                     = 'elastic.asc',
   Enum['enabled', 'running', 'disabled', 'unmanaged'] $service_ensure                 = 'enabled',
   String $package_ensure                                                              = 'present',
   String $config_file_mode                                                            = '0644',

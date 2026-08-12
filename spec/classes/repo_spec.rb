@@ -90,6 +90,30 @@ describe 'auditbeat::repo', 'type' => 'class' do
     end
   end
 
+  context 'with apt_manage_keyring set to false' do
+    let(:facts) { debian_facts('Ubuntu', '24.04', '24.04') }
+    let(:pre_condition) do
+      "class{'auditbeat':
+        apt_manage_keyring => false,
+        outputs            => {'elasticsearch' => {'hosts' => ['http://localhost:9200']}},
+      }
+      # declared after auditbeat, the way another module would be
+      apt::keyring{'elastic-keyring.asc':
+        source => 'https://artifacts.elastic.co/GPG-KEY-elasticsearch',
+      }"
+    end
+
+    it { is_expected.to compile.with_all_deps }
+
+    # compiling at all is the assertion here: declaring the keyring in both
+    # places is a duplicate declaration, whichever one Puppet evaluates first
+    it 'leaves the keyring to the other module but still references it' do
+      is_expected.to contain_file('/etc/apt/sources.list.d/beats.list').with_content(
+        %r{signed-by=/etc/apt/keyrings/elastic-keyring\.asc},
+      )
+    end
+  end
+
   context 'with a custom keyring filename and key url' do
     let(:facts) { debian_facts('Ubuntu', '26.04', '26.04') }
     let(:pre_condition) do

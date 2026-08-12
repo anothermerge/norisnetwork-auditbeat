@@ -40,6 +40,11 @@
 #   extension so that apt reads the armoured key elastic publishes. The default matches the name used by
 #   elastic_stack::repo, so that both modules agree on signed-by when they manage the same repository.
 # @param apt_keyring_dir the directory the keyring file is created in.
+# @param apt_manage_keyring whether this module declares the keyring itself. Set it to false when another
+#   module (elastic_stack::repo, for instance) already declares the very same keyring, since two modules
+#   cannot both declare it. The repository still references it through signed-by. Defaults to declaring the
+#   keyring unless it is already found in the catalogue, which only works if the other module is evaluated
+#   first.
 # @param service_ensure the status of the auditbeat service.
 # @param package_ensure the package version to install.
 # @param config_file_mode the permissions of the main configuration file.
@@ -94,6 +99,7 @@ class auditbeat (
   Optional[Boolean] $apt_use_keyring                                                  = undef,
   String[1] $apt_keyring_filename                                                     = 'elastic-keyring.asc',
   Stdlib::Absolutepath $apt_keyring_dir                                               = '/etc/apt/keyrings',
+  Optional[Boolean] $apt_manage_keyring                                               = undef,
   Enum['enabled', 'running', 'disabled', 'unmanaged'] $service_ensure                 = 'enabled',
   String $package_ensure                                                              = 'present',
   String $config_file_mode                                                            = '0644',

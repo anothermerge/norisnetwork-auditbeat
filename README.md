@@ -222,6 +222,20 @@ Installation and configuration.
 * `apt_use_keyring`: [Boolean] on Debian based systems, whether to install the repository key as a keyring in `/etc/apt/keyrings` referenced by `signed-by` instead of using the removed `apt-key` command. Defaults to *true* on Ubuntu 22.04 and Debian 12 and newer (apt 2.4 and newer, the first version that reads armoured keyrings) and to *false* below that (default: undef, i.e. autodetect).
 * `apt_keyring_filename`: [String] the name of the keyring file created in `apt_keyring_dir`. Keep the *.asc* extension, as elastic publishes the key in armoured form. The default matches the filename used by `elastic_stack::repo`, so that both modules point at the same keyring: apt rejects two entries for the same repository that disagree on `signed-by`. If another module already declares that keyring, this module reuses it instead of declaring it a second time (default: 'elastic-keyring.asc').
 * `apt_keyring_dir`: [Stdlib::Absolutepath] the directory the keyring file is created in (default: '/etc/apt/keyrings').
+* `apt_manage_keyring`: [Boolean] whether this module declares the keyring itself. Two modules cannot both declare the same keyring, so set this to *false* on nodes where another module (`elastic_stack::repo`, for instance) already declares it: the repository entry still references it through `signed-by`. When left unset, the keyring is declared unless it is already present in the catalogue, which only works if the other module is evaluated first (default: undef, i.e. autodetect).
+
+### Sharing the elastic repository with another module
+
+`elastic_stack::repo` manages the same repository and the same key. Both modules default to the `elastic-keyring.asc` filename so that their `signed-by` options agree, as apt refuses two entries for one repository that disagree on it. Only one of them may *declare* the keyring though, otherwise the catalogue fails to compile with a duplicate declaration of `Apt::Keyring[elastic-keyring.asc]`. On nodes that use both, let `elastic_stack` own it:
+
+```puppet
+class{'auditbeat':
+  apt_manage_keyring => false,
+  outputs            => {'elasticsearch' => {'hosts' => ['http://localhost:9200']}},
+}
+```
+
+Alternatively, set `manage_repo => false` to leave the repository entirely to the other module. Note that Puppet then stops managing `/etc/apt/sources.list.d/beats.list`, so remove any copy left over from an earlier run: apt keeps reading it and will still report conflicting `Signed-By` values.
 * `config_file_mode`: [String] the octal file mode of the configuration file `/etc/auditbeat/auditbeat.yml` (default: 0644).
 * `disable_configtest`: [Boolean] whether to check if the configuration file is valid before attempting to run the service (default: true).
 * `tags`: [Array[Strings]]: the tags to add to each document (default: undef).

@@ -43,10 +43,17 @@ class auditbeat::repo inherits auditbeat {
         if $use_keyring {
           # Other modules managing the elastic repo (elastic_stack::repo, for
           # instance) ship the very same key, and apt refuses two entries for
-          # one repository that disagree on signed-by. Reuse their keyring when
-          # it is already in the catalog and only reference it here, since
-          # apt::keyring cannot be declared twice.
-          unless defined(Apt::Keyring[$auditbeat::apt_keyring_filename]) or defined(File[$keyring_path]) {
+          # one repository that disagree on signed-by, so both must name the
+          # same keyring. Only one of them may declare it though: reuse the
+          # keyring when it is already in the catalog and only reference it via
+          # signed-by here. defined() cannot see a declaration that Puppet has
+          # not evaluated yet, so apt_manage_keyring turns the autodetection off
+          # when the other module happens to be evaluated last.
+          $manage_keyring = $auditbeat::apt_manage_keyring ? {
+            undef   => !(defined(Apt::Keyring[$auditbeat::apt_keyring_filename]) or defined(File[$keyring_path])),
+            default => $auditbeat::apt_manage_keyring,
+          }
+          if $manage_keyring {
             apt::keyring { $auditbeat::apt_keyring_filename:
               ensure => $auditbeat::ensure,
               source => $gpg_key_url,

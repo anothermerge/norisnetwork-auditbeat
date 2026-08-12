@@ -23,10 +23,10 @@ describe 'auditbeat::repo', 'type' => 'class' do
     it { is_expected.to compile.with_all_deps }
 
     it 'installs the key as a keyring instead of using apt-key' do
-      is_expected.to contain_apt__keyring('elastic.asc').with(
+      is_expected.to contain_apt__keyring('elastic-keyring.asc').with(
         'source' => 'https://artifacts.elastic.co/GPG-KEY-elasticsearch',
       )
-      is_expected.to contain_file('/etc/apt/keyrings/elastic.asc')
+      is_expected.to contain_file('/etc/apt/keyrings/elastic-keyring.asc')
       is_expected.not_to contain_apt__key(
         'Add key: 46095ACC8548582C1A2699A9D27D666CD88E42B4 from Apt::Source beats',
       )
@@ -34,7 +34,7 @@ describe 'auditbeat::repo', 'type' => 'class' do
 
     it 'points the source at the keyring with signed-by' do
       is_expected.to contain_file('/etc/apt/sources.list.d/beats.list').with_content(
-        %r{^deb \[signed-by=/etc/apt/keyrings/elastic\.asc\] https://artifacts\.elastic\.co/packages/9\.x/apt stable main$},
+        %r{^deb \[signed-by=/etc/apt/keyrings/elastic-keyring\.asc\] https://artifacts\.elastic\.co/packages/9\.x/apt stable main$},
       )
     end
   end
@@ -43,7 +43,7 @@ describe 'auditbeat::repo', 'type' => 'class' do
     let(:facts) { debian_facts('Debian', '13.0', '13') }
 
     it { is_expected.to compile.with_all_deps }
-    it { is_expected.to contain_apt__keyring('elastic.asc') }
+    it { is_expected.to contain_apt__keyring('elastic-keyring.asc') }
   end
 
   context 'on a release predating armoured keyring support (Ubuntu 20.04)' do
@@ -55,7 +55,7 @@ describe 'auditbeat::repo', 'type' => 'class' do
       is_expected.to contain_apt__key(
         'Add key: 46095ACC8548582C1A2699A9D27D666CD88E42B4 from Apt::Source beats',
       )
-      is_expected.not_to contain_apt__keyring('elastic.asc')
+      is_expected.not_to contain_apt__keyring('elastic-keyring.asc')
     end
   end
 
@@ -69,7 +69,25 @@ describe 'auditbeat::repo', 'type' => 'class' do
     end
 
     it { is_expected.to contain_apt__key('Add key: 46095ACC8548582C1A2699A9D27D666CD88E42B4 from Apt::Source beats') }
-    it { is_expected.not_to contain_apt__keyring('elastic.asc') }
+    it { is_expected.not_to contain_apt__keyring('elastic-keyring.asc') }
+  end
+
+  context 'when another module already declares the keyring' do
+    let(:facts) { debian_facts('Ubuntu', '26.04', '26.04') }
+    let(:pre_condition) do
+      "apt::keyring{'elastic-keyring.asc':
+        source => 'https://artifacts.elastic.co/GPG-KEY-elasticsearch',
+      }
+      class{'auditbeat': outputs => {'elasticsearch' => {'hosts' => ['http://localhost:9200']}}}"
+    end
+
+    it { is_expected.to compile.with_all_deps }
+
+    it 'reuses it rather than declaring it twice' do
+      is_expected.to contain_file('/etc/apt/sources.list.d/beats.list').with_content(
+        %r{signed-by=/etc/apt/keyrings/elastic-keyring\.asc},
+      )
+    end
   end
 
   context 'with a custom keyring filename and key url' do

@@ -36,8 +36,10 @@
 # @param apt_use_keyring whether to install the repo key as a keyring referenced by signed-by instead of
 #   with the removed apt-key command. Defaults to true on Ubuntu 22.04 and Debian 12 and newer, since apt
 #   only reads armoured keyrings from 2.4 onwards.
-# @param apt_keyring_filename the name of the keyring file created under /etc/apt/keyrings. Keep the .asc
-#   extension so that apt reads the armoured key elastic publishes.
+# @param apt_keyring_filename the name of the keyring file created under apt_keyring_dir. Keep the .asc
+#   extension so that apt reads the armoured key elastic publishes. The default matches the name used by
+#   elastic_stack::repo, so that both modules agree on signed-by when they manage the same repository.
+# @param apt_keyring_dir the directory the keyring file is created in.
 # @param service_ensure the status of the auditbeat service.
 # @param package_ensure the package version to install.
 # @param config_file_mode the permissions of the main configuration file.
@@ -90,7 +92,8 @@ class auditbeat (
   Optional[Variant[Stdlib::HTTPUrl, Stdlib::HTTPSUrl]] $gpg_key_url                   = undef,
   String $gpg_key_id                                                                  = '',
   Optional[Boolean] $apt_use_keyring                                                  = undef,
-  String[1] $apt_keyring_filename                                                     = 'elastic.asc',
+  String[1] $apt_keyring_filename                                                     = 'elastic-keyring.asc',
+  Stdlib::Absolutepath $apt_keyring_dir                                               = '/etc/apt/keyrings',
   Enum['enabled', 'running', 'disabled', 'unmanaged'] $service_ensure                 = 'enabled',
   String $package_ensure                                                              = 'present',
   String $config_file_mode                                                            = '0644',

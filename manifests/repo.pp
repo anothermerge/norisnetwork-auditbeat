@@ -38,15 +38,30 @@ class auditbeat::repo inherits auditbeat {
           undef   => $keyring_capable,
           default => $auditbeat::apt_use_keyring,
         }
-        $key_config = $use_keyring ? {
-          true    => {
-            name   => $auditbeat::apt_keyring_filename,
-            source => $gpg_key_url,
-          },
-          default => {
-            id     => $gpg_key_id,
-            source => $gpg_key_url,
-          },
+        $keyring_path = "${auditbeat::apt_keyring_dir}/${auditbeat::apt_keyring_filename}"
+
+        if $use_keyring {
+          # Other modules managing the elastic repo (elastic_stack::repo, for
+          # instance) ship the very same key, and apt refuses two entries for
+          # one repository that disagree on signed-by. Reuse their keyring when
+          # it is already in the catalog and only reference it here, since
+          # apt::keyring cannot be declared twice.
+          unless defined(Apt::Keyring[$auditbeat::apt_keyring_filename]) or defined(File[$keyring_path]) {
+            apt::keyring { $auditbeat::apt_keyring_filename:
+              ensure => $auditbeat::ensure,
+              source => $gpg_key_url,
+              dir    => $auditbeat::apt_keyring_dir,
+              before => Class['apt::update'],
+            }
+          }
+          $key_params = { 'keyring' => $keyring_path }
+        } else {
+          $key_params = {
+            'key' => {
+              id     => $gpg_key_id,
+              source => $gpg_key_url,
+            },
+          }
         }
 
         if !defined(Apt::Source['beats']) {
@@ -55,7 +70,7 @@ class auditbeat::repo inherits auditbeat {
             location => $apt_repo_url,
             release  => 'stable',
             repos    => 'main',
-            key      => $key_config,
+            *        => $key_params,
           }
           Class['apt::update'] -> Package['auditbeat']
         }
